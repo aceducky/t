@@ -3,7 +3,7 @@ import * as z from "zod/v4";
 // Schema matching backend PredictionInput
 export const predictionInputSchema = z.object({
   age: z.number({ error: "Age is required" })
-    .min(0, "Age must be at least 0")
+    .min(1, "Age must be at least 1")
     .max(120, "Age must be at most 120"),
 
   gender: z.number({ error: "Gender is required" })
