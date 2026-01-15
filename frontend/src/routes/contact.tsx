@@ -11,7 +11,7 @@ function ContactPage() {
     {
       icon: <Mail className="w-6 h-6" />,
       title: "Email",
-      value: "contact@liversense.demo",
+      value: "contact@explailiver.demo",
       description: "Send us an email anytime",
     },
     {
@@ -71,7 +71,7 @@ function ContactPage() {
             </h2>
             <div className="prose prose-muted max-w-none">
               <p className="text-muted-foreground leading-relaxed mb-4">
-                LiverSense is a demonstration project showcasing the capabilities of 
+                ExplaiLiver+ is a demonstration project showcasing the capabilities of 
                 machine learning in healthcare prediction. This is not a production 
                 medical application and should not be used for actual medical diagnosis.
               </p>

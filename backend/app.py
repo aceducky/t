@@ -1,4 +1,5 @@
 import logging
+import warnings
 from contextlib import asynccontextmanager
 from typing import List, Literal
 
@@ -11,6 +12,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
+
+# Suppress sklearn UserWarnings (feature name mismatches in stacking classifier)
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 
 # --------------------------------------------------
 # Logging
@@ -150,7 +154,7 @@ def create_shap_explainer(model, selector, background_data=None):
             logger.info("SHAP TreeExplainer created successfully")
             return explainer, "tree"
         except Exception as tree_err:
-            logger.warning(f"TreeExplainer failed: {tree_err}")
+            logger.debug(f"TreeExplainer not available, using fallback: {tree_err}")
         
         # Try using predict_proba as the model function
         try:
@@ -262,16 +266,28 @@ def compute_shap_contributions(
         # New API (ExactExplainer, etc.) - call explainer directly
         explanation = explainer(X_selected)
         
+        # Debug: log the shape to understand output format
+        logger.debug(f"SHAP explanation shape: {explanation.shape}, values shape: {explanation.values.shape}")
+        
         # Handle multi-output (binary classification)
-        if len(explanation.shape) == 3:
-            # Shape is (n_samples, n_features, n_classes) - use class 1
+        # ExactExplainer with predict_proba outputs shape (n_samples, n_features, n_classes)
+        if len(explanation.values.shape) == 3:
+            # Shape is (n_samples, n_features, n_classes) - use class 1 (disease)
             shap_vals = explanation.values[0, :, 1]
             base_value = float(explanation.base_values[0, 1])
-        elif len(explanation.shape) == 2:
+        elif len(explanation.values.shape) == 2:
+            # Could be (n_samples, n_features) for single output
+            # Or we need to check if base_values has multiple classes
             shap_vals = explanation.values[0]
             base_val = explanation.base_values
             if isinstance(base_val, np.ndarray):
-                base_value = float(base_val[0]) if base_val.ndim == 1 else float(base_val[0, 1] if base_val.shape[1] > 1 else base_val[0, 0])
+                if base_val.ndim == 2 and base_val.shape[1] > 1:
+                    # Multi-class base values - use class 1
+                    base_value = float(base_val[0, 1])
+                elif base_val.ndim == 1:
+                    base_value = float(base_val[0])
+                else:
+                    base_value = float(base_val[0, 0])
             else:
                 base_value = float(base_val)
         else:

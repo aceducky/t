@@ -8,7 +8,7 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-liver-teal" />
             <span className="font-['Outfit'] font-semibold text-white">
-              LiverSense
+              ExplaiLiver+
             </span>
           </div>
           

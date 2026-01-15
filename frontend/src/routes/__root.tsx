@@ -30,7 +30,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "LiverSense - Intelligent Liver Disease Prediction",
+        title: "ExplaiLiver+ - Explainable Liver Disease Prediction",
       },
       {
         name: "description",

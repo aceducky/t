@@ -85,8 +85,8 @@ export function HealthInsights({ warnings }: HealthInsightsProps) {
                 {warning.message}
               </p>
               
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                Value: {warning.value} (Normal upper limit: {warning.upper_limit})
+              <p className="text-xs text-muted-foreground mt-1">
+                Your value: {warning.value}
               </p>
             </div>
           </div>

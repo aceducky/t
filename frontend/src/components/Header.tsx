@@ -16,7 +16,7 @@ export default function Header() {
   const currentPath = routerState.location.pathname;
 
   return (
-    <header className="bg-liver-navy text-white shadow-lg sticky top-0 z-50">
+    <header className="bg-liver-navy/95 backdrop-blur-sm text-white shadow-lg sticky top-0 z-50 border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -24,10 +24,10 @@ export default function Header() {
             <Heart className="w-8 h-8 text-liver-teal group-hover:scale-110 transition-transform" />
             <div className="flex flex-col">
               <span className="font-['Outfit'] font-bold text-xl tracking-tight">
-                LiverSense
+                ExplaiLiver+
               </span>
               <span className="text-[10px] text-white/60 -mt-1 hidden sm:block">
-                Intelligent Liver Disease Prediction
+                Explainable Liver Disease Prediction
               </span>
             </div>
           </Link>

@@ -70,7 +70,7 @@ function AboutPage() {
       <section className="bg-slate-900 py-12 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white font-['Outfit'] animate-fade-in">
-            About LiverSense
+            About ExplaiLiver+
           </h1>
           <p className="text-lg text-white/80 mt-4 animate-slide-up">
             Advanced liver disease prediction powered by explainable AI

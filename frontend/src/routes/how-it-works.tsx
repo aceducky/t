@@ -74,7 +74,7 @@ function HowItWorksPage() {
               The Prediction Process
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              LiverSense uses a sophisticated machine learning pipeline to analyze your clinical 
+              ExplaiLiver+ uses a sophisticated machine learning pipeline to analyze your clinical 
               parameters and provide a reliable prediction about your liver health status.
             </p>
           </div>
