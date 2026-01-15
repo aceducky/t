@@ -47,7 +47,7 @@ function AboutPage() {
     "Higher accuracy than traditional methods",
     "Explainable AI for transparent decisions",
     "User-friendly interface for healthcare professionals",
-    "Real-time prediction with confidence scores",
+    "Real-time prediction results",
     "Comprehensive feature importance analysis",
   ];
 

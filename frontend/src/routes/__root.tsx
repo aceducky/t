@@ -35,7 +35,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         name: "description",
         content:
-          "Advanced liver disease prediction using machine learning with SHAP-based interpretability. Enter your clinical test values and get instant predictions with confidence scores.",
+          "Advanced liver disease prediction using machine learning with SHAP-based interpretability. Enter your clinical test values and get instant predictions.",
       },
     ],
     links: [

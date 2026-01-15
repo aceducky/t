@@ -48,7 +48,7 @@ function HowItWorksPage() {
       icon: <FileText className="w-6 h-6" />,
       title: "Result Interpretation",
       description:
-        "Receive an easy-to-understand report with your liver health status and confidence score.",
+        "Receive an easy-to-understand report with your liver health status.",
     },
   ];
 

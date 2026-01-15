@@ -105,7 +105,7 @@ function PredictPage() {
                         <FormControl>
                           <Input
                             type="number"
-                            min={0}
+                            min={1}
                             max={120}
                             placeholder={fieldMetadata.age.placeholder}
                             {...field}

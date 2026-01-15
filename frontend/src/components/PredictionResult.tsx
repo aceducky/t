@@ -50,19 +50,7 @@ export function PredictionResult({ result }: PredictionResultProps) {
             {result.summary}
           </p>
           
-          <div className="mt-4">
-            <span
-              className={`
-                inline-block px-4 py-1.5 rounded-full text-sm font-semibold
-                ${isHealthy 
-                  ? "bg-liver-healthy text-white" 
-                  : "bg-liver-alert text-white"
-                }
-              `}
-            >
-              Confidence Score: {(result.confidence * 100).toFixed(1)}%
-            </span>
-          </div>
+
           
           <p className="text-muted-foreground text-sm mt-4">
             {isHealthy 

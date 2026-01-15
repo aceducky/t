@@ -94,7 +94,6 @@ class MedicalWarning(BaseModel):
 
 class PredictionResponse(BaseModel):
     prediction: str
-    confidence: float
     risk: str
     summary: str
     warnings: List[MedicalWarning]
@@ -236,14 +235,12 @@ def predict(data: PredictionInput):
 
         # 4) Predict
         y = int(app.state.model.predict(X_selected)[0])
-        p = float(app.state.model.predict_proba(X_selected)[0][y])
 
         warnings = generate_warnings(data)
         summary = generate_summary(y, warnings)
 
         return PredictionResponse(
             prediction="Liver Disease Detected" if y == 1 else "No Liver Disease Detected",
-            confidence=round(p, 3),
             risk="High Risk" if y == 1 else "Low Risk",
             summary=summary,
             warnings=warnings,

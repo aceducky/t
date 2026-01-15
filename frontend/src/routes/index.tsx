@@ -45,7 +45,7 @@ function HomePage() {
     "Higher accuracy than traditional methods",
     "Explainable AI for transparent decisions",
     "User-friendly interface for healthcare professionals",
-    "Real-time prediction with confidence scores",
+    "Real-time prediction results",
     "Comprehensive feature importance analysis",
   ];
 
@@ -61,7 +61,7 @@ function HomePage() {
           </h1>
           
           <p className="text-lg md:text-xl text-white/80 max-w-3xl mx-auto mt-6 animate-slide-up stagger-1">
-            Enter your clinical test values and get instant prediction with confidence score.
+            Enter your clinical test values and get instant prediction.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 animate-slide-up stagger-2">

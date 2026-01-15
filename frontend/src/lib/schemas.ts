@@ -57,7 +57,6 @@ export interface MedicalWarning {
 
 export interface PredictionResponse {
   prediction: string;
-  confidence: number;
   risk: string;
   summary: string;
   warnings: MedicalWarning[];
