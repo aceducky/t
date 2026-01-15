@@ -55,11 +55,20 @@ export interface MedicalWarning {
   message: string;
 }
 
+export interface ShapContribution {
+  feature: string;
+  value: number;
+  contribution: number;
+  impact: "positive" | "negative";
+}
+
 export interface PredictionResponse {
   prediction: string;
   risk: string;
   summary: string;
   warnings: MedicalWarning[];
+  shap_contributions: ShapContribution[];
+  base_value: number;
 }
 
 export interface ApiError {

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { PredictionResult } from "@/components/PredictionResult";
 import { HealthInsights } from "@/components/HealthInsights";
+import { ShapExplanation } from "@/components/ShapExplanation";
 
 import { 
   predictionInputSchema,
@@ -374,6 +375,7 @@ function PredictPage() {
           {result && (
             <div className="mt-8">
               <PredictionResult result={result} />
+              <ShapExplanation contributions={result.shap_contributions} />
               <HealthInsights warnings={result.warnings} />
             </div>
           )}
