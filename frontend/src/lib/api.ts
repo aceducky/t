@@ -1,4 +1,5 @@
-import type { PredictionInput, PredictionResponse, ApiError } from "./schemas";
+import { useMutation } from "@tanstack/react-query";
+import type { PredictionInput, PredictionResponse } from "./schemas";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -13,6 +14,9 @@ export class ApiClientError extends Error {
     }
 }
 
+/**
+ * Fetches a prediction from the API
+ */
 export async function predictDisease(
     input: PredictionInput
 ): Promise<PredictionResponse> {
@@ -25,7 +29,7 @@ export async function predictDisease(
     });
 
     if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({}))) as ApiError;
+        const errorData = await response.json().catch(() => ({}));
 
         if (response.status === 400) {
             throw new ApiClientError(
@@ -51,15 +55,12 @@ export async function predictDisease(
     return response.json() as Promise<PredictionResponse>;
 }
 
-export async function checkHealth(): Promise<boolean> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/health`);
-        if (response.ok) {
-            const data = await response.json();
-            return data.model_loaded === true;
-        }
-        return false;
-    } catch {
-        return false;
-    }
+/**
+ * React Query mutation hook for disease prediction
+ */
+export function usePrediction() {
+    return useMutation<PredictionResponse, ApiClientError, PredictionInput>({
+        mutationFn: predictDisease,
+    });
 }
+

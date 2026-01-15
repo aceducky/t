@@ -138,23 +138,44 @@ def load_model():
     logger.info("Model, scaler, and selector loaded")
     return model, scaler, selector
 
-def create_shap_explainer(model, selector):
-    """Create a SHAP TreeExplainer using the XGBoost base learner."""
+def create_shap_explainer(model, selector, background_data=None):
+    """Create a SHAP explainer using available methods."""
     try:
         # Get the XGBoost model from the stacking classifier
         xgb_model = model.named_estimators_["xgb"]
         
-        # Create TreeExplainer for fast SHAP computation
-        explainer = shap.TreeExplainer(xgb_model)
+        # Try TreeExplainer first (fastest)
+        try:
+            explainer = shap.TreeExplainer(xgb_model)
+            logger.info("SHAP TreeExplainer created successfully")
+            return explainer, "tree"
+        except Exception as tree_err:
+            logger.warning(f"TreeExplainer failed: {tree_err}")
         
-        logger.info("SHAP TreeExplainer created successfully")
-        return explainer
+        # Try using predict_proba as the model function
+        try:
+            # Create a simple explainer using the predict function
+            explainer = shap.Explainer(xgb_model.predict_proba, masker=shap.maskers.Independent(data=np.zeros((1, 6))))
+            logger.info("SHAP Explainer with predict_proba created")
+            return explainer, "function"
+        except Exception as func_err:
+            logger.warning(f"Function explainer failed: {func_err}")
+        
+        # Final fallback: use LinearExplainer on the meta-learner
+        try:
+            meta_model = model.final_estimator_
+            explainer = shap.LinearExplainer(meta_model, masker=shap.maskers.Independent(data=np.zeros((1, 10))))  # 4 base models + 6 features with passthrough
+            logger.info("SHAP LinearExplainer on meta-learner created")
+            return explainer, "linear"
+        except Exception as linear_err:
+            logger.warning(f"LinearExplainer failed: {linear_err}")
+        
+        logger.error("All SHAP explainer methods failed, SHAP will be disabled")
+        return None, None
+        
     except Exception as e:
-        logger.warning(f"Failed to create TreeExplainer, falling back to Explainer: {e}")
-        # Fallback to general Explainer
-        xgb_model = model.named_estimators_["xgb"]
-        explainer = shap.Explainer(xgb_model)
-        return explainer
+        logger.error(f"Failed to create any SHAP explainer: {e}")
+        return None, None
 
 # --------------------------------------------------
 # Warning generation (simple & readable)
@@ -220,21 +241,42 @@ def compute_shap_contributions(
 ) -> tuple[List[ShapContribution], float]:
     """Compute SHAP values and return contributions list."""
     
-    # Get SHAP values
-    shap_values = explainer.shap_values(X_selected)
-    
-    # Handle different SHAP output formats
-    if isinstance(shap_values, list):
-        # Binary classification: use class 1 (disease) SHAP values
-        shap_vals = shap_values[1][0] if len(shap_values) > 1 else shap_values[0][0]
+    # Get SHAP values - handle both old and new SHAP API
+    if hasattr(explainer, 'shap_values'):
+        # Old API (TreeExplainer, etc.)
+        shap_values = explainer.shap_values(X_selected)
+        
+        # Handle different SHAP output formats
+        if isinstance(shap_values, list):
+            # Binary classification: use class 1 (disease) SHAP values
+            shap_vals = shap_values[1][0] if len(shap_values) > 1 else shap_values[0][0]
+        else:
+            shap_vals = shap_values[0]
+        
+        # Get base value (expected value)
+        if isinstance(explainer.expected_value, (list, np.ndarray)):
+            base_value = float(explainer.expected_value[1]) if len(explainer.expected_value) > 1 else float(explainer.expected_value[0])
+        else:
+            base_value = float(explainer.expected_value)
     else:
-        shap_vals = shap_values[0]
-    
-    # Get base value (expected value)
-    if isinstance(explainer.expected_value, (list, np.ndarray)):
-        base_value = float(explainer.expected_value[1]) if len(explainer.expected_value) > 1 else float(explainer.expected_value[0])
-    else:
-        base_value = float(explainer.expected_value)
+        # New API (ExactExplainer, etc.) - call explainer directly
+        explanation = explainer(X_selected)
+        
+        # Handle multi-output (binary classification)
+        if len(explanation.shape) == 3:
+            # Shape is (n_samples, n_features, n_classes) - use class 1
+            shap_vals = explanation.values[0, :, 1]
+            base_value = float(explanation.base_values[0, 1])
+        elif len(explanation.shape) == 2:
+            shap_vals = explanation.values[0]
+            base_val = explanation.base_values
+            if isinstance(base_val, np.ndarray):
+                base_value = float(base_val[0]) if base_val.ndim == 1 else float(base_val[0, 1] if base_val.shape[1] > 1 else base_val[0, 0])
+            else:
+                base_value = float(base_val)
+        else:
+            shap_vals = explanation.values
+            base_value = float(explanation.base_values)
     
     contributions = []
     for i, (feature_name, shap_val) in enumerate(zip(selected_feature_names, shap_vals)):
@@ -259,7 +301,7 @@ def compute_shap_contributions(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.model, app.state.scaler, app.state.selector = load_model()
-    app.state.shap_explainer = create_shap_explainer(app.state.model, app.state.selector)
+    app.state.shap_explainer, app.state.explainer_type = create_shap_explainer(app.state.model, app.state.selector)
     
     # Pre-compute selected feature indices
     importances = app.state.selector.feature_importances_
@@ -332,13 +374,17 @@ def predict(data: PredictionInput):
         # 4) Predict
         y = int(app.state.model.predict(X_selected)[0])
 
-        # 5) Compute SHAP contributions
-        shap_contributions, base_value = compute_shap_contributions(
-            app.state.shap_explainer,
-            X_selected,
-            app.state.selected_feature_names,
-            original_values,
-        )
+        # 5) Compute SHAP contributions (if available)
+        if app.state.shap_explainer is not None:
+            shap_contributions, base_value = compute_shap_contributions(
+                app.state.shap_explainer,
+                X_selected,
+                app.state.selected_feature_names,
+                original_values,
+            )
+        else:
+            shap_contributions = []
+            base_value = 0.0
 
         warnings = generate_warnings(data)
         summary = generate_summary(y, warnings)

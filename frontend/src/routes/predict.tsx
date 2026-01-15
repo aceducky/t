@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -31,49 +30,34 @@ import {
   defaultPredictionValues,
   fieldMetadata,
   type PredictionInput,
-  type PredictionResponse,
 } from "@/lib/schemas";
-import { predictDisease, ApiClientError } from "@/lib/api";
+import { usePrediction, ApiClientError } from "@/lib/api";
 
 export const Route = createFileRoute("/predict")({ component: PredictPage });
 
 function PredictPage() {
-  const [result, setResult] = useState<PredictionResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const prediction = usePrediction();
 
   const form = useForm<PredictionInput>({
     resolver: zodResolver(predictionInputSchema),
     defaultValues: defaultPredictionValues,
   });
 
-  async function onSubmit(values: PredictionInput) {
-    setError(null);
-    setResult(null);
-    setIsSubmitting(true);
-    
-    try {
-      const response = await predictDisease(values);
-      setResult(response);
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        setError(err.message);
-        if (err.details) {
-          setError(`${err.message}: ${err.details.join(", ")}`);
-        }
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+  function onSubmit(values: PredictionInput) {
+    prediction.mutate(values);
   }
 
   const handleClear = () => {
     form.reset();
-    setResult(null);
-    setError(null);
+    prediction.reset();
   };
+
+  // Format error message
+  const errorMessage = prediction.error
+    ? prediction.error instanceof ApiClientError && prediction.error.details
+      ? `${prediction.error.message}: ${prediction.error.details.join(", ")}`
+      : prediction.error.message
+    : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -332,10 +316,10 @@ function PredictPage() {
                 <div className="flex items-center justify-center gap-4 pt-4">
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={prediction.isPending}
                     className="bg-liver-teal hover:bg-liver-teal/90 text-white font-semibold px-8 py-2 min-w-[140px]"
                   >
-                    {isSubmitting ? (
+                    {prediction.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Processing...
@@ -359,24 +343,24 @@ function PredictPage() {
           </Form>
 
           {/* Error Display */}
-          {error && (
+          {errorMessage && (
             <div className="mt-8 rounded-xl border-2 border-destructive bg-destructive/10 p-6 animate-slide-up">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-6 h-6 text-destructive flex-shrink-0" />
                 <div>
                   <h3 className="font-bold text-destructive">Error</h3>
-                  <p className="text-destructive/80">{error}</p>
+                  <p className="text-destructive/80">{errorMessage}</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Results Display */}
-          {result && (
+          {prediction.data && (
             <div className="mt-8">
-              <PredictionResult result={result} />
-              <ShapExplanation contributions={result.shap_contributions} />
-              <HealthInsights warnings={result.warnings} />
+              <PredictionResult result={prediction.data} />
+              <ShapExplanation contributions={prediction.data.shap_contributions} />
+              <HealthInsights warnings={prediction.data.warnings} />
             </div>
           )}
         </div>
